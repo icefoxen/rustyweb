@@ -1,0 +1,20 @@
+[package]
+name = "rustyweb_rustful"
+version = "0.1.0"
+authors = ["Simon Heath <icefoxen@gmail.com>"]
+
+[dependencies]
+rustful = {version = "0.9", features = ["multipart"] }
+#rustc-serialize = "0.3"
+#serde_derive = "1"
+#serde = "1"
+#lazy_static = "0.2"
+#base64 = "0.7"
+#ring = "0.12"
+#untrusted = "0.5"
+#chrono = { version = "0.4", features = ["serde", "rustc-serialize"] }
+#rustyweb = {path = "../rustyweb"}
+
+
+[dev-dependencies]
+reqwest = "0.7"
