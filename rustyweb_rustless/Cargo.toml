@@ -1,0 +1,9 @@
+[package]
+name = "rustyweb_rustless"
+version = "0.1.0"
+authors = ["Simon Heath <icefoxen@gmail.com>"]
+
+[dependencies]
+rustless = "0.10"
+hyper = "0.9"
+iron = "0.4"

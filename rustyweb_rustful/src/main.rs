@@ -1,17 +1,55 @@
 #[macro_use]
 extern crate rustful;
+use std::path::Path;
 
 use rustful::{Server, Context, Response, TreeRouter};
 
-fn say_hello(context: Context, response: Response) {
+use rustful::StatusCode;
+use rustful::file::check_path;
+
+
+fn say_hello(context: Context, mut response: Response) {
     response.send(format!("Hello, world!"));
+}
+
+fn send_file(context: Context, mut response: Response) {
+    if let Some(file) = context.variables.get("id") {
+        let file_path = Path::new(file.as_ref());
+
+        //Check if the path is valid
+        if check_path(file_path).is_ok() {
+            //Make a full path from the filename
+            println!("File path is {:?}", file_path);
+            let path = Path::new("src").join(file_path);
+
+            //Send the file
+            let res = response.send_file(&path)
+                .or_else(|e| e.send_not_found("the file was not found"))
+                .or_else(|e| e.ignore_send_error());
+
+            //Check if a more fatal file error than "not found" occurred
+            if let Err((e, mut response)) = res {
+                //Something went horribly wrong
+                response.set_status(StatusCode::InternalServerError);
+            }
+        } else {
+            //Accessing parent directories is forbidden
+            response.set_status(StatusCode::Forbidden);
+        }
+    } else {
+        //No filename was specified
+        response.set_status(StatusCode::Forbidden);
+    }
 }
 
 
 fn main() {
     let router = insert_routes! {
         TreeRouter::new() => {
-            Get: say_hello,
+            Get: Box::new(say_hello) as Box<rustful::handler::Handler>,
+            "id" => {
+                ":id" => Get: Box::new(send_file)
+            },
         }
     };
 
@@ -28,6 +66,7 @@ fn main() {
     
     server.run().expect("Could not run server?");
 }
+
 /*
 #[cfg(test)]
 mod tests {
