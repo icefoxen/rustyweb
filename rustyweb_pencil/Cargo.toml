@@ -1,0 +1,10 @@
+[package]
+name = "rustyweb_pencil"
+version = "0.1.0"
+authors = ["Simon Heath <icefoxen@gmail.com>"]
+
+[dependencies]
+pencil = "0.3"
+lazy_static = "0.2"
+rustc-serialize = "0.3"
+rustyweb = {path = "../rustyweb"}

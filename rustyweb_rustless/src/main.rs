@@ -13,9 +13,6 @@ fn main() {
         });
 
         api.namespace("id/:filename", |file_ns| {
-            file_ns.get("", |endpoint| {
-                endpoint.handle(|client, _params| client.text("Hello file!".to_owned()))
-            });
 
             file_ns.get("", |file_endpoint| {
                 file_endpoint.handle(|mut client, params| {
