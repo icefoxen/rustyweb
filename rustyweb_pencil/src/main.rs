@@ -55,12 +55,6 @@ fn post_name(request: &mut Request) -> PencilResult {
         } else {
             pencil::abort(400)
         }
-        // let rename_request: UpdateMessage = 
-        // println!("Got post to {}: {:?}", &name, rename_request);
-        // match server.write().unwrap().apply_update_if_valid(&name, &rename_request) {
-        //     Ok(_) => Response::text("ok"),
-        //     Err(v) => Response::text(format!("{:?}", v)).with_status_code(403),
-        // }
     } else {
         pencil::abort(404)
     }

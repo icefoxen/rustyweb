@@ -1,0 +1,11 @@
+[package]
+name = "rustyweb_nickel"
+version = "0.1.0"
+authors = ["Simon Heath <icefoxen@gmail.com>"]
+
+[dependencies]
+nickel = "0.10"
+lazy_static = "0.2"
+
+[dev-dependencies]
+reqwest = "0.7"
