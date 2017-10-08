@@ -8,35 +8,77 @@ extern crate rustyweb;
 extern crate base64;
 extern crate untrusted;
 extern crate ring;
+extern crate rustc_serialize;
+use rustc_serialize::json;
 
 use rustyweb::*;
+use std::sync::RwLock;
+use std::sync::Arc;
 
-
-use nickel::{Nickel, Mountable, StaticFilesHandler, MiddlewareResult, Request, Response};
-
+use nickel::{Nickel, Mountable, MiddlewareResult, Request, Response, HttpRouter, JsonBody};
+use nickel::status::StatusCode;
 
 
 fn hello_world<'mw>(_req: &mut Request, res: Response<'mw>) -> MiddlewareResult<'mw> {
     res.send("Hello world")
 }
 
-fn main() {
+
+fn run(server_data: ServerData, addr: &str) {
     let mut server = Nickel::new();
-    // Apparently this falls-through if we don't math the
-    // first mount.
-    server.mount("/id/", StaticFilesHandler::new("src/"));
-    server.mount("/id/", middleware! { |req|
-        let path = req.path_without_query().unwrap();
-        format!("No static file with path '{}'!", path)
+    let server_data = Arc::new(RwLock::new(server_data));
+    let server_data2 = server_data.clone();
+    let server_data3 = server_data.clone();
+
+    server.get("/id/:name", middleware! { |req, res|
+        if let Some(name) = req.param("name") {
+            if let Some(n) = server_data2.read().unwrap().get_id_key(name) {
+                let encoded = base64::encode(n);
+                (StatusCode::Ok, encoded)
+            } else {
+                (StatusCode::NotFound, "Not found".into())
+            }
+        } else {
+            (StatusCode::InternalServerError, "Should never happen".into())
+        }
     });
 
-    // The ordering is apparently important here; if I put this first then
-    // it seems to match everything.
-    server.mount("/",  hello_world);
+    server.get("/name/:name", middleware! { |req, mut res|
+        if let Some(name) = req.param("name") {
+            if let Some(n) = server_data.read().unwrap().get_name(name) {
+                let encoded = json::encode(n).expect("Should never happen!");
+                res.set(nickel::MediaType::Json);
+                (StatusCode::Ok, encoded)
+            } else {
+                (StatusCode::NotFound, "Not found".into())
+            }
+        } else {
+            (StatusCode::InternalServerError, "Should never happen".into())
+        }
+    });
 
-    server.listen("127.0.0.1:8888").unwrap();
+    server.post("/name/:name", middleware! { |req, res|
+        if let Some(name) = req.param("name").map(|s| s.to_owned()) {
+            let message = try_with!(res, {
+                req.json_as::<UpdateMessage>().map_err(|e| (StatusCode::BadRequest, e))
+            });
+            match server_data3.write().unwrap().apply_update_if_valid(&name, &message) {
+                Ok(_) => (StatusCode::Ok, "ok".into()),
+                Err(v) => (StatusCode::Forbidden, format!("{:?}", v))
+            }
+        } else {
+            (StatusCode::InternalServerError, "Should never happen".into())
+        }
+    });
+
+    server.mount("/",  hello_world);
+    server.listen(addr).unwrap();
 }
 
+fn main() {
+    let server_data = ServerData::default();
+    run(server_data, "127.0.0.1:8888");
+}
 
 #[cfg(test)]
 mod tests {
@@ -60,8 +102,7 @@ mod tests {
         let pubkey_bytes = KEYPAIR.public_key_bytes();
         s.add_id(UNITTEST_USER, pubkey_bytes);
         s.update_name(UNITTEST_NAME, &UNITTEST_NAME_VALUE);
-        super::main();
-
+        super::run(s, "127.0.0.1:8888");
     }
 
     fn generate_keypair() -> signature::Ed25519KeyPair {
