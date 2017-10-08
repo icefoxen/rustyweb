@@ -16,6 +16,7 @@ use std::sync::RwLock;
 
 use rocket::State;
 use rocket_contrib::{Json};
+use rocket::http::Status;
 
 use rustyweb::*;
 
@@ -42,13 +43,13 @@ fn get_name(name: String, serverdata: State<RwLock<ServerData>>) -> Option<Json<
     }
 }
 
-// What I CAN'T figure out is how to make this return a 403 if
-// the user is not authorized.  Returning a Result just turns into
-// a 500 error on Err, it seems, and I'm sick of searching for this
-// one thing.
 #[post("/name/<name>", format = "application/json", data = "<msg>")]
-fn post_name(name: String, msg: Json<UpdateMessage>, serverdata: State<RwLock<ServerData>>) -> Result<String, ValidationError> {
-    serverdata.write().unwrap().apply_update_if_valid(&name, &msg.0).map(|_| "ok".to_string())
+fn post_name(name: String, msg: Json<UpdateMessage>, serverdata: State<RwLock<ServerData>>) -> Result<String, Status> {
+    // serverdata.write().unwrap().apply_update_if_valid(&name, &msg.0).map(|_| "ok".to_string())
+    match serverdata.write().unwrap().apply_update_if_valid(&name, &msg.0) {
+        Ok(_) => Ok("ok".into()),
+        Err(v) => Err(Status::Forbidden)
+    }
 }
 
 
@@ -199,6 +200,5 @@ mod tests {
         assert!(resp.status().is_success());
         let resp_msg: UpdateMessage = resp.json().unwrap();
         assert_eq!(resp_msg, data);
-
     }
 }
