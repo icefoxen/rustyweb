@@ -1,0 +1,11 @@
+[package]
+name = "rustyweb_rocket"
+version = "0.1.0"
+authors = ["Simon Heath <icefoxen@gmail.com>"]
+
+[dependencies]
+rocket = "0.3"
+rocket_codegen = "0.3"
+
+[dev-dependencies]
+reqwest = "0.7"
