@@ -1,1 +1,1 @@
-Code for the article at <https://wiki.alopex.li/ASurveyOfRustWebAppServers>
+Code for the article at <https://wiki.alopex.li/AnOpinionatedGuideToRustWebServers>
