@@ -2,7 +2,6 @@ extern crate ring;
 extern crate untrusted;
 extern crate chrono;
 extern crate base64;
-extern crate rustc_serialize;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -20,7 +19,7 @@ pub enum ValidationError {
 }
 
 
-#[derive(Debug, Clone, PartialEq, Eq, RustcDecodable, RustcEncodable, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UpdateMessage {
     pub user: String,
     pub utc: DateTime<Utc>,
@@ -95,13 +94,14 @@ impl ServerData {
         let rng = rand::SystemRandom::new();
         let pkcs8_bytes = signature::Ed25519KeyPair::generate_pkcs8(&rng).unwrap();
         let keypair = signature::Ed25519KeyPair::from_pkcs8(
-            untrusted::Input::from(&pkcs8_bytes)
+            untrusted::Input::from(pkcs8_bytes.as_ref())
         ).unwrap();
 
-        let encoded_privkey = base64::encode(&pkcs8_bytes[..]);
+        let encoded_privkey = base64::encode(pkcs8_bytes.as_ref());
         println!("Private key for {} is: {}", username, encoded_privkey);
 
-        let pubkey_bytes = keypair.public_key_bytes();
+        use ring::signature::KeyPair;
+        let pubkey_bytes = keypair.public_key().as_ref();
         self.add_id(username, pubkey_bytes);
 
     }
