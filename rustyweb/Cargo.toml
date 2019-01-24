@@ -2,6 +2,7 @@
 name = "rustyweb"
 version = "0.1.0"
 authors = ["Simon Heath <icefoxen@gmail.com>"]
+edition = "2018"
 
 [dependencies]
 serde_derive = "1"
@@ -11,7 +12,6 @@ base64 = "0.10"
 ring = "0.14"
 untrusted = "0.6"
 chrono = { version = "0.4", features = ["serde"] }
-
 
 [dev-dependencies]
 reqwest = "0.9"

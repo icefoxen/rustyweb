@@ -1,0 +1,13 @@
+[package]
+name = "rustyweb_actix"
+version = "0.1.0"
+authors = ["Simon Heath <icefoxen@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+rustyweb = {path = "../rustyweb/"}
+
+[dependencies.actix-web]
+version = "0.7"
+default-features = false
+features = ["brotli", "flate2-c", "cell"]

@@ -1,13 +1,11 @@
-extern crate ring;
-extern crate untrusted;
-extern crate chrono;
-extern crate base64;
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
+// rustyweb/src/lib.rs
+use base64;
+use chrono;
+use serde_derive::{Deserialize, Serialize};
+use untrusted;
 
-use ring::{signature, rand};
 use chrono::prelude::*;
+use ring::{self, rand, signature};
 
 use std::collections::HashMap;
 
@@ -18,7 +16,6 @@ pub enum ValidationError {
     InvalidSignature,
 }
 
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UpdateMessage {
     pub user: String,
@@ -27,7 +24,11 @@ pub struct UpdateMessage {
     pub new_contents: String,
 }
 impl UpdateMessage {
-    pub fn signed_message(keypair: &signature::Ed25519KeyPair, user: &str, msg: &str) -> UpdateMessage {
+    pub fn signed_message(
+        keypair: &signature::Ed25519KeyPair,
+        user: &str,
+        msg: &str,
+    ) -> UpdateMessage {
         let aggregated_message = String::from(user) + " " + msg;
         let message_bytes = aggregated_message.as_bytes();
         let sig = keypair.sign(message_bytes);
@@ -41,7 +42,8 @@ impl UpdateMessage {
     }
 
     pub fn verify_signature(&self, pubkey_bytes: &[u8]) -> Result<(), ValidationError> {
-        let aggregated_message = String::from(self.user.as_str()) + " " + self.new_contents.as_ref();
+        let aggregated_message =
+            String::from(self.user.as_str()) + " " + self.new_contents.as_ref();
         let message_bytes = aggregated_message.as_bytes();
         let sig_bytes = base64::decode(&self.signature)
             .map_err(|_decode_error| ValidationError::MalformedSignature)?;
@@ -52,7 +54,6 @@ impl UpdateMessage {
             .map_err(|_err| ValidationError::InvalidSignature)
     }
 }
-
 
 #[derive(Debug, Default, Clone)]
 pub struct ServerData {
@@ -76,7 +77,7 @@ impl ServerData {
     pub fn validate_update(&self, msg: &UpdateMessage) -> Result<(), ValidationError> {
         match self.keys.get(&msg.user) {
             Some(key) => msg.verify_signature(key),
-            None => Err(ValidationError::UnknownUser(msg.user.clone()))
+            None => Err(ValidationError::UnknownUser(msg.user.clone())),
         }
     }
 
@@ -84,7 +85,11 @@ impl ServerData {
         self.names.insert(name.to_string(), contents.clone());
     }
 
-    pub fn apply_update_if_valid(&mut self, dest: &str, msg: &UpdateMessage) -> Result<(), ValidationError> {
+    pub fn apply_update_if_valid(
+        &mut self,
+        dest: &str,
+        msg: &UpdateMessage,
+    ) -> Result<(), ValidationError> {
         let _ = self.validate_update(msg)?;
         self.update_name(dest, &msg);
         Ok(())
@@ -93,9 +98,9 @@ impl ServerData {
     pub fn add_user(&mut self, username: &str) {
         let rng = rand::SystemRandom::new();
         let pkcs8_bytes = signature::Ed25519KeyPair::generate_pkcs8(&rng).unwrap();
-        let keypair = signature::Ed25519KeyPair::from_pkcs8(
-            untrusted::Input::from(pkcs8_bytes.as_ref())
-        ).unwrap();
+        let keypair =
+            signature::Ed25519KeyPair::from_pkcs8(untrusted::Input::from(pkcs8_bytes.as_ref()))
+                .unwrap();
 
         let encoded_privkey = base64::encode(pkcs8_bytes.as_ref());
         println!("Private key for {} is: {}", username, encoded_privkey);
@@ -103,6 +108,5 @@ impl ServerData {
         use ring::signature::KeyPair;
         let pubkey_bytes = keypair.public_key().as_ref();
         self.add_id(username, pubkey_bytes);
-
     }
 }
